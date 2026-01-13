@@ -1,18 +1,217 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Website của Kit</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Vòng quay may mắn</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.container{
+    background:#fff;
+    padding:25px;
+    border-radius:18px;
+    width:360px;
+    text-align:center;
+    box-shadow:0 15px 40px rgba(0,0,0,.25);
+}
+.wheel-box{
+    position:relative;
+    width:300px;
+    height:300px;
+    margin:20px auto;
+}
+#wheel{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    border:8px solid #333;
+    transition:transform 5s cubic-bezier(.17,.67,.32,1);
+}
+.pointer{
+    position:absolute;
+    top:-18px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-bottom:28px solid #e74c3c;
+}
+.center{
+    position:absolute;
+    width:70px;height:70px;
+    background:#fff;
+    border-radius:50%;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+}
+button{
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    border:none;
+    border-radius:10px;
+    background:#2c7be5;
+    color:#fff;
+    cursor:pointer;
+}
+
+/* popup */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+.modal.active{display:flex;}
+.modal-content{
+    background:#fff;
+    padding:25px;
+    border-radius:14px;
+    width:280px;
+    animation:zoom .3s ease;
+}
+@keyframes zoom{
+    from{transform:scale(.7);opacity:0}
+    to{transform:scale(1);opacity:1}
+}
+</style>
 </head>
+
 <body>
 
-    <div class="container">
-        <h1>Chao xìn tất cả 👋</h1>
-        <p>Hãy bấm xuống để xem nhân phẩm của bạn</p>
-        <button onclick="sayHello()">Bấm vào đây</button>
+<div class="container">
+    <h2>🎯 Vòng quay 521</h2>
+
+    <div class="wheel-box">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="center"></div>
     </div>
 
-    <script src="script.js"></script>
+    <button onclick="spin()">QUAY NGAY</button>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle"></h3>
+        <p id="modalText"></p>
+        <button onclick="closeModal()">OK</button>
+    </div>
+</div>
+
+<script>
+const prizes=[
+ {text:"50$",percent:30},
+ {text:"25$",percent:25},
+ {text:"20$",percent:20},
+ {text:"17$",percent:15},
+ {text:"10$",percent:5},
+ {text:"Tự đi mua cơm đi",percent:5}
+];
+const colors=["#ff7675","#74b9ff","#55efc4","#ffeaa7","#a29bfe","#fd79a8"];
+
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+const center=canvas.width/2;
+const slice=2*Math.PI/prizes.length;
+
+let rotation=0,spinning=false;
+
+/* vẽ vòng */
+prizes.forEach((p,i)=>{
+ ctx.beginPath();
+ ctx.fillStyle=colors[i];
+ ctx.moveTo(center,center);
+ ctx.arc(center,center,center,i*slice,(i+1)*slice);
+ ctx.fill();
+
+ ctx.save();
+ ctx.translate(center,center);
+ ctx.rotate(i*slice+slice/2);
+ ctx.textAlign="right";
+ ctx.font="bold 14px Arial";
+ ctx.fillStyle="#333";
+ ctx.fillText(p.text,center-10,5);
+ ctx.restore();
+});
+
+/* random % */
+function getPrize(){
+ let r=Math.random()*100,t=0;
+ for(let i=0;i<prizes.length;i++){
+   t+=prizes[i].percent;
+   if(r<=t) return i;
+ }
+ return prizes.length-1;
+}
+
+/* quay */
+function spin(){
+ if(spinning) return;
+ spinning=true;
+
+ const i=getPrize();
+ const spins=Math.floor(Math.random()*4)+6;
+ const angle=(prizes.length-i)*slice;
+
+ rotation+=spins*2*Math.PI+angle;
+ canvas.style.transform=`rotate(${rotation}rad)`;
+
+ setTimeout(()=>{
+   showModal(prizes[i].text,colors[i]);
+   spinning=false;
+ },5000);
+}
+
+/* popup */
+function showModal(text,color){
+ document.getElementById("modalTitle").innerText="🎉 Chúc mừng!";
+ document.getElementById("modalText").innerText="Bạn trúng: "+text;
+ document.getElementById("modal").classList.add("active");
+ confetti(color);
+}
+function closeModal(){
+ document.getElementById("modal").classList.remove("active");
+}
+
+/* confetti xịn */
+function confetti(mainColor){
+ for(let i=0;i<100;i++){
+   const c=document.createElement("div");
+   const size=Math.random()*6+6;
+   c.style.position="fixed";
+   c.style.width=size+"px";
+   c.style.height=size+"px";
+   c.style.background=Math.random()>.5?mainColor:colors[Math.floor(Math.random()*colors.length)];
+   c.style.left=Math.random()*100+"vw";
+   c.style.top="-10px";
+   c.style.borderRadius=Math.random()>.5?"50%":"2px";
+   c.style.zIndex=9999;
+   document.body.appendChild(c);
+
+   const x=(Math.random()-.5)*300;
+   const r=Math.random()*720;
+
+   c.animate([
+     {transform:"translate(0,0) rotate(0deg)",opacity:1},
+     {transform:`translate(${x}px,${window.innerHeight+50}px) rotate(${r}deg)`,opacity:0}
+   ],{duration:4000,easing:"ease-out"});
+
+   setTimeout(()=>c.remove(),4000);
+ }
+}
+</script>
+
 </body>
 </html>
