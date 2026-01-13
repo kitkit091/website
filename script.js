@@ -1,3 +1,3 @@
 function sayHello() {
-    alert("Chúc mừng 🎉 Website hoạt động!");
+    alert("🐈‍⬛ Chúc bạn ỉa chảy suốt đời haha =))!");
 }
